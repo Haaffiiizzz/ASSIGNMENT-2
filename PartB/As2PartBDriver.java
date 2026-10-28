@@ -19,8 +19,8 @@ public class As2PartBDriver {
         Player player = new Player();
 
         JOptionPane.showMessageDialog(null,
-            "Welcome to Potion Quest!\nHealth: "
-            + player.getHealth() + " HP\nPotion: None");
+            "Welcome to Potion Quest!\nHealth: " + player.getHealth()
+            + " HP\nPotion: None\nSpecial Potion: None");
 
         while (true) {
             int choice = random.nextInt(ITEMS.length);
@@ -47,7 +47,8 @@ public class As2PartBDriver {
             switch (choice) {
                 case 0:
                     player.setPotion(new DraughtPotion());
-                    showPotion(player, "New potion: Base Draught");
+                    showPotion(player, "New potion: Base Draught",
+                        player.getPotion());
                     break;
 
                 case 1:
@@ -59,19 +60,13 @@ public class As2PartBDriver {
                     break;
 
                 case 3:
-                    eatFood(player, new Butterbeer());
+                    handleButterbeer(player);
                     break;
 
                 case 4:
-                    enhance(player, 4);
-                    break;
-
                 case 5:
-                    enhance(player, 5);
-                    break;
-
                 case 6:
-                    enhance(player, 6);
+                    enhance(player, choice);
                     break;
 
                 case 7:
@@ -85,6 +80,33 @@ public class As2PartBDriver {
         }
     }
 
+    private static void handleButterbeer(Player player) {
+        Butterbeer butterbeer = new Butterbeer();
+
+        if (player.getSpecialPotion() == null) {
+            int answer = JOptionPane.showConfirmDialog(
+                null,
+                "Do you want to use the Butterbeer as a potion?",
+                "Elixir of Froth",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (answer == JOptionPane.CLOSED_OPTION) {
+                return;
+            }
+
+            if (answer == JOptionPane.YES_OPTION) {
+                player.setSpecialPotion(new FoodAdapter(butterbeer));
+
+                showPotion(player, "New potion: Elixir of Froth",
+                    player.getSpecialPotion());
+                return;
+            }
+        }
+
+        eatFood(player, butterbeer);
+    }
+
     private static void eatFood(Player player, Food food) {
         player.eat(food);
 
@@ -94,13 +116,44 @@ public class As2PartBDriver {
     }
 
     private static void enhance(Player player, int choice) {
-        Potion potion = player.getPotion();
+        Potion draught = player.getPotion();
+        Potion special = player.getSpecialPotion();
 
-        if (potion == null) {
+        if (draught == null && special == null) {
             JOptionPane.showMessageDialog(null,
-                "You need a Base Draught before adding enhancements.");
+                "You need a potion before adding enhancements.");
             return;
         }
+
+        boolean useSpecial;
+
+        if (draught != null && special != null) {
+            String[] buttons = {
+                "Base Draught",
+                "Elixir of Froth"
+            };
+
+            int selected = JOptionPane.showOptionDialog(
+                null,
+                "Select the potion to enhance:",
+                "Choose Potion",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                buttons,
+                buttons[0]
+            );
+
+            if (selected == JOptionPane.CLOSED_OPTION) {
+                return;
+            }
+
+            useSpecial = selected == 1;
+        } else {
+            useSpecial = special != null;
+        }
+
+        Potion potion = useSpecial ? special : draught;
 
         if (choice == 4) {
             potion = new MandrakeRoot(potion);
@@ -110,13 +163,22 @@ public class As2PartBDriver {
             potion = new PhoenixFeather(potion);
         }
 
-        player.setPotion(potion);
-        showPotion(player, "Enhancement added");
+        if (useSpecial) {
+            player.setSpecialPotion(potion);
+        } else {
+            player.setPotion(potion);
+        }
+
+        showPotion(player,
+            "Added enhancement: " + ITEMS[choice],
+            potion);
     }
 
-    private static void showPotion(Player player, String title) {
-        Potion potion = player.getPotion();
-
+    private static void showPotion(
+        Player player,
+        String title,
+        Potion potion
+    ) {
         JOptionPane.showMessageDialog(null,
             title
             + "\n" + potion.getDescription()
